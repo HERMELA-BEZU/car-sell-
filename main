@@ -1,0 +1,295 @@
+create database DbCarSell1
+
+
+create table CarManf( 
+manfId varchar(20) check (  manfId not like '%[^A-Za-z_0-9 ]%') primary key, 
+manName varchar(25), 
+manCountry varchar(20), 
+manDateofEstb Datetime
+)
+
+create table carModel
+(modelId int primary key not null,
+modelName varchar(25) not null,
+manfId varchar(20) not null Foreign key references CarManf(manfId))
+
+
+create table carDetail
+(carsId int primary key,
+vehicleIdNo varchar(50) not null,
+cModelId int not null Foreign key references carModel(modelId),
+carType varchar(20),
+carYearofMan int,
+carColor varchar(20),
+carStatus varchar(20) not null check (carStatus in('New','Used')),
+carPrice int,
+otherattributes varchar(30))
+
+
+create table Customer
+(custId int primary key,
+custName varchar(30) not null,
+custFName varchar(30) not null,
+custGFName varchar(30) not null,
+custGender char (1) not null check (custGender in('M','F')),
+CustRegion varchar(30),
+custTel varchar (20) check (custTel not like'%[^0-9+-]%'),
+custEmail varchar (50) check (custEmail like '%_@__%.__%'),
+otherattributes varchar(25))
+
+create table Staff
+(staffId int primary key,
+staffName varchar(30) not null,
+staffposition varchar(20) not null,
+otherattributes varchar(50))
+
+
+create table carOrder
+(orderId int primary key,
+ostaffId int not null Foreign key references Staff(staffId),
+ocustId int not null Foreign key references Customer(custId),
+ocarsId int not null Foreign key references carDetail(carsId),
+dateOrdered date not null,
+dateDelivered date not null,
+amount_paid int,
+otherattributes varchar(50))
+
+
+
+insert into CarManf
+values
+('man_1','Toyota','Japan','1937-08-28'),
+('man_2','Hyundai','South Korea','1967-12-29'),
+('man_3','Nissan','Japan','1933-12-26'),
+('man_4','Ford','United States','1903-06-16'),
+('man_5','Honda','Japan','1948-09-24'),
+('man_6','Chevrolet','United States','1911-11-3')
+
+SELECT *FROM CarManf
+
+insert into carModel
+values
+(1,'Corolla','man_1'),
+(2,'Yaris','man_1'),
+(3,'Vitz','man_1'),
+(5,'RAV4','man_1'),
+(6,'V8','man_1'),
+(7,'Tucson','man_2'),
+(8,'Elantra','man_2'),
+(9,'D4D Dolphin','man_1'),
+(10,'fiesta','man_4'),
+(11,'Carina','man_2'),
+(12,'Flex','man_4'),
+(13,'Chevrolet Forester','man_6')
+
+select*from carModel
+
+insert into carDetail(carsId,vehicleIdNo,cModelId,carType,carYearofMan,carColor,carStatus,carPrice)
+values
+(1,'5J8TB4H38FL002262',1,'Hatchback',2016,'Red','Used',1480000),
+(2,'5J8TC4H38FL002262',2,'Hatchback',2018,'Blue','New',1200000),
+(3,'5J8TC4H38XL002262',9,'Van',2006,'Grey','Used',1900000),
+(4,'KMHGH4JH3EU973801',7,'SUV',2021,'Grey','New',5700000),
+(5,'KMHGK4JH3EU973901',8,'SUV',2022,'White','New',1100000),
+(6,'5J8TB4H38FL002267',1,'Hatchback',2018,'White','Used',1480000)
+
+select*from carDetail
+
+insert into Customer(custId,custName,custFName,custGFName,custGender,CustRegion,custTel,custEmail)
+values
+(1,'selam','Bezu','Taka','F','Tigray','+251912000507','sele@yahoo.com'),
+(2,'Beti','kesu','lula','F','Amhara','+2519137530808','beti@gmail.com'),
+(3,'mesa','Tekele','Tafese','F','Oromia','+25191600157589','mesi@gmail.com'),
+(4,'Yohanes','Temesgen','Dembel','M','Oromiya','+251913127960','yohi@gmail.com')
+
+select*from Customer
+
+
+insert into Staff(staffId,staffName,staffposition)
+values
+(1,'Hermon','Sales'),
+(2,'yared','Sales'),
+(3,'Mesfin','Sales'), 
+(4,'Belete','Sales')
+
+
+
+insert into carOrder(orderId,ostaffId,ocustId,ocarsId,dateOrdered,dateDelivered,amount_paid)
+values
+(1,2,1,2,'2022-10-12','2023-03-11',200000),
+(2,1,2,1,'2022-09-11','2022-12-01',1000000),
+(3,4,4,3,'2022-11-23','2022-12-31',1500000),
+(4,3,3,4,'2023-01-01','2023-01-05',2500000)
+
+select*from carOrder
+
+
+create view VCars as
+Select carDetail.*, CarManf.manName,carModel.modelName
+From carDetail inner Join carModel on carDetail.cModelId=carModel.modelId 
+inner join CarManf on carModel.manfId=CarManf.manfId
+
+select * from VCars
+
+create procedure SpCarstatus @carColor varchar(10)
+AS
+select * from carDetail
+where carColor=@carColor
+Go
+EXEc SpCarstatus @carColor='GREY'
+
+
+
+create procedure spmanfcarDetail @man_name varchar(20)
+as
+select * from CarManf
+where manName=@man_name
+go
+
+exec spmanfcarDetail @man_name='Toyota'
+
+
+create procedure sppricecarDetail @min_val int, @max_val int
+as
+select * from carDetail
+where carPrice>@min_val and carPrice<@max_val
+go
+
+exec sppricecarDetail @min_val=0,@max_val=1900000
+
+
+
+SELECT CarManf.manName,count(carModel.modelId)
+FROM  CarManf INNER JOIN  carModel ON CarManf.manfId=carModel.manfId
+GROUP BY rollup( CarManf.manName)
+
+SELECT CarManf.manName,carModel.modelName
+FROM  CarManf INNER JOIN  carModel ON CarManf.manfId=carModel.manfId
+GROUP BY rollup( CarManf.manName,carModel.modelName)
+
+  
+
+select carStatus, avg(carprice) as AvgPrice
+from carDetail
+Group by carStatus
+
+update  carDetail
+set carPrice=2000000
+where carsId=3
+
+select * from carDetail
+
+update carModel
+set modelId=20
+where modelId=1
+
+
+delete carDetail
+where carsId=6
+
+
+
+SELECT principal_id, type_desc, is_disabled
+FROM sys.server_principals
+WHERE name = 'sa'
+
+
+USE master;
+GO
+ALTER LOGIN sa disable ;
+
+
+CREATE LOGIN logdealer1
+WITH PASSWORD = 'cardealer1@123' MUST_CHANGE, 
+CHECK_EXPIRATION = ON
+
+CREATE LOGIN logdealer2
+WITH PASSWORD = 'cardealer1@123' MUST_CHANGE, 
+CHECK_EXPIRATION = ON
+
+
+SELECT *
+FROM sys.sql_logins
+
+CREATE USER dealer1 FOR LOGIN logdealer1
+GRANT SELECT, INSERT ON dbo.carDetail TO dealer1
+
+CREATE USER dealer2 FOR LOGIN logdealer2
+GRANT SELECT, INSERT, UPDATE, DELETE ON dbo.carDetail TO dealer2
+
+use DbCarSell1 
+REVOKE CONNECT FROM guest
+
+ALTER DATABASE DbCarSell1 SET OFFLINE WITH
+ROLLBACK IMMEDIATE
+
+BACKUP DATABASE DbCarSell1 TO DISK = 'C:\DATABASEBACKUP\ BUCarsell1' WITH DIFFERENTIAL
+
+
+IF (EXISTS(select * from sys.key_constraints where name = 'PK_modelId'))  
+ALTER table carModel DROP PK_modelId
+
+
+IF (EXISTS(select * from sys.indexes where name = 'PK_modelId'))  
+DROP INDEX PK_modelId on modelId 
+
+
+CREATE CLUSTERED INDEX ix_modelName ON dbo.carModel(modelName)
+
+
+IF (EXISTS(select * from sys.key_constraints where Name = 'PK_custId'))  
+ALTER table Customer DROP PK_custId
+
+IF (EXISTS(select * from sys.indexes where Name = 'PK_custId'))  
+DROP INDEX PK_custId on custId
+
+CREATE CLUSTERED INDEX ix_custName ON dbo.Customer(custName) 
+
+create view Vcustomer
+as 
+select Customer.*,carDetail.carType,carDetail.carColor,carOrder.dateOrdered
+From Customer
+inner join carOrder on Customer.custId = carOrder.ocustId  
+inner join carDetail on carOrder.ocarsId = carDetail.carsId
+
+select * from Vcustomer 
+where custGender = 'F' and carColor = 'Red'
+or
+
+select Customer.*,carDetail.carType,carDetail.carColor,carOrder.dateOrdered
+From Customer
+inner join carOrder on Customer.custId = carOrder.ocustId  
+inner join carDetail on carOrder.ocarsId = carDetail.carsId
+where custGender = 'F' and carColor = 'Red'
+
+
+select carDetail.*, carModel.modelName, CarManf.manName
+from carDetail
+inner join carModel on carDetail.cModelId = carModel.modelId
+inner join CarManf on carModel.manfId = CarManf.manfId
+where carPrice > 2000000 and carStatus = 'used'
+
+
+select carType, avg(carprice) as AvgPrice
+From carDetail
+Group by carType
+
+create view Vavgcarmnf
+as 
+select carDetail.*, carModel.modelName, CarManf.manName
+from carDetail
+inner join carModel on carDetail.cModelId = carModel.modelId
+inner join CarManf on carModel.manfId = CarManf.manfId
+
+select * from Vavgcarmnf
+
+select manName, avg(carprice) as AvgPrice
+from Vavgcarmnf
+Group by manName
+
+Select Max(carPrice) as MaximumPrice
+FROM carDetail
+
+Select Min(carPrice) as MinimumPrice
+FROM Vavgcarmnf
+where manName = 'Toyota'
